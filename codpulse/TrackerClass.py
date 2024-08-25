@@ -6,6 +6,7 @@ import time
 class Tracker(InternalState):
     """
     Main Module class that tracks the execution time and results of a given function over multiple iterations.
+
     Parameters
     ----------
     function_object : callable
@@ -14,6 +15,7 @@ class Tracker(InternalState):
         Additional namespace to provide to the function during execution, by default an empty dictionary.
     no_iterations : int, optional
         Number of iterations to run the tracked function, by default 3.
+
     Attributes
     ----------
     function_object : callable
@@ -24,16 +26,20 @@ class Tracker(InternalState):
         Namespace for the function's execution environment.
     executable_function : callable
         The executable version of the tracked function.
+
     Methods
     -------
     __call__(*param)
         Calls the tracked function with specified parameters and analyzes the results.
     get_executable()
         Generates an executable version of the tracked function.
+
     Examples
     --------
     To track the execution time and results of a function, you can use the `Tracker` class as shown below:
+
     >>> from codepulse import Tracker
+
     >>> def fun1(x, y):
     ...     m = 1
     ...     for i in range(x*100):
@@ -41,10 +47,13 @@ class Tracker(InternalState):
     ...         for j in range(x*30):
     ...             m = m + 4 
     ...     return m
+
     >>> t = Tracker(fun1)
     >>> t(3, 5)
+
     This will execute the `fun1` function with the specified parameters and analyze the results over multiple iterations.
     The tracked function's execution times and analysis results will be displayed in a formatted table.
+
     """
 
     def __init__(self, function_object, namespace={}, no_iterations=3):

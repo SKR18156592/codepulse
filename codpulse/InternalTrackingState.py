@@ -1,25 +1,30 @@
 class InternalState:
     """
     A class for managing internal state information.
+
     This class maintains private variables related to modified function strings
     and analysis data frames. It provides controlled access to these variables
     through properties and getter/setter methods.
+
     Parameters
     ----------
     modified_function_string : str
         The modified function string to be stored.
+
     Attributes
     ----------
     modified_function_string : str
         The modified function string.
     analysis_df : pandas DataFrame or None
         DataFrame containing analysis results, or None if analysis hasn't been performed.
+
     Methods
     -------
     __getitem__(i)
         Get the modified function string (i=0) or analysis data frame (i=1).
     __setitem__(i, value)
         Set the analysis data frame (i=1) to the given value.
+
     Examples
     --------
     >>> state = InternalState("x + y")
@@ -32,6 +37,7 @@ class InternalState:
     def __init__(self, modified_function_string):
         """
         Initialize the InternalState with a modified function string.
+
         Parameters
         ----------
         modified_function_string : str
@@ -43,6 +49,7 @@ class InternalState:
     def modified_function_string(self):
         """
         Get the modified function string.
+
         Returns
         -------
         str
@@ -54,6 +61,7 @@ class InternalState:
     def modified_function_string(self, value):
         """
         Set the modified function string.
+
         Parameters
         ----------
         value : str
@@ -65,6 +73,7 @@ class InternalState:
     def analysis_df(self):
         """
         Get the analysis data frame.
+
         Returns
         -------
         pandas.DataFrame
@@ -76,6 +85,7 @@ class InternalState:
     def analysis_df(self, value):
         """
         Set the analysis data frame.
+
         Parameters
         ----------
         value : pandas.DataFrame
@@ -86,11 +96,13 @@ class InternalState:
     def __getitem__(self, i):
         """
         Get the modified function string or analysis data frame.
+
         Parameters
         ----------
         i : int
             Index value, where 0 returns the modified function string and
             1 returns the analysis data frame.
+
         Returns
         -------
         str or pandas.DataFrame
@@ -104,6 +116,7 @@ class InternalState:
     def __setitem__(self, i, value):
         """
         Set the analysis data frame to the given value.
+
         Parameters
         ----------
         i : int

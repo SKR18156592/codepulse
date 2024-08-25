@@ -5,25 +5,29 @@ import pandas as pd
 def modify_function(function_object):
     """
     Modify a given function by adding time tracking statements after each line.
+
     Parameters
     ----------
     function_object : callable
         The function to be modified.
+
     Returns
     -------
     str
         A modified string representation of the input function with added time tracking statements.
+
     Notes
     -----
     This function takes the source code of the input function, inserts time tracking statements after each line,
     and returns the modified string representation of the function.
+
     """
     # add timer for each line
     source_code = inspect.getsource(function_object)
     source_code = source_code.split("\n")
     prefix = source_code[0]  # def func1():
 
-    variables = ["time.time()"]
+    variables = ["time.perf_counter()"]
     variables1 = []
     body = source_code[1:]
     modified_body = []
@@ -31,6 +35,7 @@ def modify_function(function_object):
     initial_indent = None
     prev_indent = None
     skip_indent = None
+    consumed = None # prevents getting one indentation being empty completely
 
     # clean body
     temp_body = []
@@ -40,18 +45,33 @@ def modify_function(function_object):
         if prev_indent is None:
             prev_indent = indent
 
-        if l_strip == "" or any(l_strip.startswith(p) for p in ["#", "print("]):
+        if l_strip == "" or any(l_strip.startswith(p) for p in ["#"]):
             # don't include intentation value or anything from here completely ignore
             continue
+        if initial_indent is None:
+            # any execution coming here means it is not # or just empty line. It can be print
+            initial_indent = indent
+        if indent > prev_indent:
+            # entering for loop 
+            consumed = False
+        if any(l_strip.startswith(p) for p in ["print("]):
+            # don't include intentation value or anything from here completely ignore
+            if prev_indent > indent and not consumed:
+                # so case where for loop had only print statements
+                temp_body += [f"{' '*prev_indent}#placeholder"]
+            prev_indent = indent
+            continue
         if prev_indent is not None and prev_indent > indent:
-            # we came out of the loop
+            # we came out of the loop: this puts placeholder after the last line in inner for/while etc loop
             temp_body += [f"{' '*prev_indent}#placeholder"]
-
-        temp_body += [b]
         prev_indent = indent
+        temp_body += [b]
+        consumed = True
+    if prev_indent is not None and initial_indent is not None and initial_indent != prev_indent:
+        temp_body += [f"{' '*initial_indent}#placeholder"]
+
     body = temp_body.copy()
     prev_indent = None
-
     for i, b in enumerate(body):
         l_strip = b.lstrip()
         indent = len(b) - len(b.lstrip())
@@ -74,7 +94,7 @@ def modify_function(function_object):
             # previously it was in skip not now
             skip_indent = None
 
-        s = f"{' '*indent}time_watcher_{i} = time.time()"
+        s = f"{' '*indent}time_watcher_{i} = time.perf_counter()"
         s1 = f"{' '*indent}max_watcher_{i} = max(max_watcher_{i}, 0.0 if {variables[-1]} is None else time_watcher_{i} - {variables[-1]})"
 
         variables.append(f"time_watcher_{i}")
@@ -97,7 +117,7 @@ def modify_function(function_object):
     if initial_indent is None:
         initial_indent = 0
     # we will not enter here if function has return call, if not then we enter here
-    pre_suffix = f"{' '*initial_indent}time_watcher_{i+1} = time.time()"
+    pre_suffix = f"{' '*initial_indent}time_watcher_{i+1} = time.perf_counter()"
     s1 = f"{' '*initial_indent}max_watcher_{i+1} = max(max_watcher_{i+1}, 0.0 if {variables[-1]} is None else time_watcher_{i+1} - {variables[-1]})"  # {0 if variables[-1] is 'None' else f'time_watcher_{i+1} - {variables[-1]}'})"
     variables.append(f"time_watcher_{i+1}")
     variables1.append(f"max_watcher_{i+1}")
@@ -124,22 +144,27 @@ def modify_function(function_object):
 def merge_text(x):
     """
     Merge non-empty text values from an iterable into a single string.
+
     Parameters
     ----------
     x : iterable
         Iterable containing text values.
+
     Returns
     -------
     str
         A single string formed by merging the non-empty text values from the iterable.
+
     Raises
     ------
     Exception
         If all text values in the iterable are empty.
+
     Notes
     -----
     This function iterates through the provided iterable and merges the non-empty text values into a single string.
     If all text values are empty, an Exception is raised.
+
     """
     for i in x:
         if str(i).rstrip() != "":
@@ -150,18 +175,22 @@ def merge_text(x):
 def find_valid_line(df):
     """
     Combine text from columns in a DataFrame to form valid lines, filling NaN values with empty strings.
+
     Parameters
     ----------
     df : pandas.DataFrame
         DataFrame containing text data.
+
     Returns
     -------
     numpy.ndarray
         An array of strings, where each row represents a valid line created from the non-NaN values in the columns.
+
     Notes
     -----
     This function takes a DataFrame with text data and combines the non-NaN values from relevant columns to form
     valid lines. The resulting array can be used to display formatted text output.
+
     """
     line_cols = [i for i in df.columns if i.startswith("line_")]
     x = df[line_cols]
@@ -172,17 +201,21 @@ def find_valid_line(df):
 def mean_excluding_nan_count(x):
     """
     Calculate the mean of a pandas Series while excluding NaN values.
+
     Parameters
     ----------
     x : pandas.Series
         A pandas Series containing numerical values, possibly including NaNs.
+
     Returns
     -------
     float
         The calculated mean of the provided Series, excluding NaN values.
+
     Notes
     -----
     This function calculates the mean of the provided pandas Series, excluding any NaN values present in the Series.
+
     """
     x = x.dropna()
     return x.mean()
@@ -191,17 +224,21 @@ def mean_excluding_nan_count(x):
 def std_excluding_nan_count(x):
     """
     Calculate the standard deviation of a pandas Series while excluding NaN values.
+
     Parameters
     ----------
     x : pandas.Series
         A pandas Series containing numerical values, possibly including NaNs.
+
     Returns
     -------
     float
         The calculated standard deviation of the provided Series, excluding NaN values.
+
     Notes
     -----
     This function calculates the standard deviation of the provided pandas Series, excluding any NaN values present in the Series.
+
     """
     x = x.dropna()
     return x.std()
@@ -210,19 +247,23 @@ def std_excluding_nan_count(x):
 def process_logs(items):
     """
     Process tracked logs and calculate mean and standard deviation of execution times for each line.
+
     Parameters
     ----------
     items : list of tuples
         List of tuples containing tracked data for each iteration.
+
     Returns
     -------
     pandas.DataFrame
         A DataFrame containing the calculated mean and standard deviation of execution times for each line.
+
     Notes
     -----
     This function takes a list of tracked data for each iteration and calculates the mean and standard deviation of
     execution times for each line across the iterations. The returned DataFrame provides insights into the execution
     performance of different lines within the tracked function.
+
     """
     df1 = pd.DataFrame()
     for i, item in enumerate(items):
@@ -269,20 +310,24 @@ def process_logs(items):
 def max_length(df, padding_value):
     """
     Calculate the maximum lengths of columns in a DataFrame along with an additional padding value.
+
     Parameters
     ----------
     df : pandas.DataFrame
         DataFrame containing the data.
     padding_value : int
         Additional padding value to add to the maximum lengths.
+
     Returns
     -------
     list
         A list of maximum lengths for each column, considering the original column name length and data length.
+
     Notes
     -----
     This function computes the maximum lengths required for each column in the provided DataFrame
     along with an additional padding value. It is typically used to format output for display.
+
     """
     max_list = []
     for col in df.columns:
@@ -296,6 +341,7 @@ def max_length(df, padding_value):
 def display_results(df, total_time, no_iter, fn_name):
     """
     Display tracked function execution results in a well-formatted table.
+
     Parameters
     ----------
     df : pandas.DataFrame
@@ -306,11 +352,13 @@ def display_results(df, total_time, no_iter, fn_name):
         Number of iterations.
     fn_name : str
         Name of the tracked function.
+
     Notes
     -----
     This function takes the processed DataFrame of tracked data, along with the total execution times and function
     information, and prints the results in a formatted table. The table includes details about mean and standard
     deviation of execution times for each line, as well as overall statistics for the tracked function.
+
     """
     df.iloc[:, 2:] = round(df.iloc[:, 2:], 3)
     padding_value = 5
@@ -336,18 +384,22 @@ def display_results(df, total_time, no_iter, fn_name):
 def _ss(data):
     """
     Calculate the sum of squared deviations of a sequence of data.
+
     Parameters
     ----------
     data : iterable
         Sequence of numerical values.
+
     Returns
     -------
     float
         The calculated sum of squared deviations of the provided data.
+
     Notes
     -----
     This function computes the sum of squared deviations from the mean of the input sequence of numerical values.
     It is primarily used as a helper function by the `stddev_custom` function to calculate variance.
+
     """
     c = mean_custom(data)
     ss = sum((x - c) ** 2 for x in data)
@@ -357,22 +409,27 @@ def _ss(data):
 def mean_custom(data):
     """
     Calculate the sample arithmetic mean of a list of values.
+
     Parameters
     ----------
     data : list
         List of numerical values.
+
     Returns
     -------
     float
         The calculated arithmetic mean of the provided data.
+
     Raises
     ------
     ValueError
         If the input data list is empty.
+
     Notes
     -----
     This function computes the sample arithmetic mean (average) of the given list of numerical values.
     If the input data list is empty, a ValueError is raised.
+
     """
     n = len(data)
     if n < 1:
@@ -383,6 +440,7 @@ def mean_custom(data):
 def stddev_custom(data, ddof=0):
     """
     Calculate the standard deviation of a list of values.
+
     Parameters
     ----------
     data : list
@@ -390,19 +448,23 @@ def stddev_custom(data, ddof=0):
     ddof : int, optional
         Delta degrees of freedom. By default, computes the population standard deviation.
         Use `ddof=1` to compute the sample standard deviation.
+
     Returns
     -------
     float
         The calculated standard deviation of the provided data.
+
     Raises
     ------
     ValueError
         If the input data list has fewer than two data points.
+
     Notes
     -----
     This function calculates the standard deviation of the given list of numerical values.
     The `ddof` parameter controls whether the population or sample standard deviation is calculated.
     If the input data list has fewer than two data points, a ValueError is raised.
+
     """
     n = len(data)
     if n < 2:
