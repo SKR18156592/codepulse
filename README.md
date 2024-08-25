@@ -10,12 +10,24 @@
 
 **codepulse** is a Python package designed to provide detailed insights into the execution time of your code at a granular level, line by line. By meticulously tracking the execution time of each line of code, codepulse helps you identify bottlenecks, optimize performance, and gain a deeper understanding of your code's behavior.
 
+## Table of Contents
+
+- [Main Features](#main-features)
+- [Where to get it](#where-to-get-it)
+- [Usage](#usage)
+- [License](#license)
+
 ## Main Features
 
 - Precisely measures the execution time of each line of code within a function.
 - Generates informative visualizations that highlight performance hotspots.
 - Supports integration with popular Python development environments.
 - Designed for ease of use and seamless integration into existing projects.
+
+
+## Where to get it
+The source code is currently hosted on GitHub at: https://github.com/SKR18156592/codepulse
+
 
 ### Usage
 
